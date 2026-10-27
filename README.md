@@ -2,7 +2,6 @@
 
 HKDSE ICT 選修 2A（數據庫）SQL 溫習遊戲。這是一個靜態網站：不用登入，沒有後端，不收集任何資料。遊戲主要在 iPhone Safari 上玩。
 
-規格見 `SPEC.md`，給 Claude Code 的指示見 `CLAUDE.md`。
 
 ## 檔案
 
@@ -28,19 +27,6 @@ npm install && npm test # 檢查器單元測試：每個 write 關卡的答案�
 
 修改了任何遊戲檔案後，把 `sw.js` 的 `VERSION` 加一，學生的手機才會更新快取。
 
-## 在本機試玩
-
-```sh
-python3 -m http.server 8123
-# 打開 http://localhost:8123/
-node tests/e2e.mjs      # 用 iPhone SE (375×667) 及 iPhone 15 的畫面自動試玩
-```
-
-## 發佈到 GitHub Pages
-
-1. 把整個資料夾推到 GitHub 的 `main` 分支。
-2. Repository → Settings → Pages → Source 選「GitHub Actions」。
-3. `.github/workflows/pages.yml` 會先執行 `build.py` 及單元測試，再發佈。
 
 ## 老師頁
 
