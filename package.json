@@ -1,0 +1,20 @@
+{
+  "name": "fatkee-sql-game",
+  "version": "1.0.0",
+  "description": "",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "build": "python3 build.py"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "sql.js": "^1.13.0"
+  },
+  "type": "module",
+  "private": true
+}

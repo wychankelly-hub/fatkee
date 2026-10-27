@@ -1,0 +1,77 @@
+PRAGMA foreign_keys = ON;
+CREATE TABLE STAFF (SID CHAR(3) PRIMARY KEY, SNAME VARCHAR(20) NOT NULL, ROLE VARCHAR(10) NOT NULL, SALARY INTEGER, HDATE DATE, BOSS CHAR(3) REFERENCES STAFF(SID));
+CREATE TABLE ITEM (IID CHAR(3) PRIMARY KEY, INAME VARCHAR(20), ENAME VARCHAR(40) NOT NULL, CAT VARCHAR(10) NOT NULL, PRICE INTEGER NOT NULL, STOCK INTEGER);
+CREATE TABLE CUSTOMER (CID CHAR(3) PRIMARY KEY, CNAME VARCHAR(20) NOT NULL, PHONE CHAR(8), DISTRICT VARCHAR(20), VIP CHAR(1));
+CREATE TABLE ORDERS (OID CHAR(3) PRIMARY KEY, CID CHAR(3) REFERENCES CUSTOMER(CID), SID CHAR(3) NOT NULL REFERENCES STAFF(SID), ODATE DATE NOT NULL, OTYPE VARCHAR(4) NOT NULL);
+CREATE TABLE ODETAIL (OID CHAR(3) REFERENCES ORDERS(OID), IID CHAR(3) REFERENCES ITEM(IID), QTY INTEGER NOT NULL, PRIMARY KEY (OID, IID));
+INSERT INTO STAFF VALUES
+('S01','發哥','BOSS',30000,'2001-03-15',NULL),
+('S02','珍姐','CASHIER',16000,'2010-06-01','S01'),
+('S03','阿強','COOK',19000,'2015-09-10','S01'),
+('S04','肥波','COOK',17500,'2020-01-20','S03'),
+('S05','細妹','WAITER',14000,'2023-07-01','S02'),
+('S06','阿Ken','WAITER',14500,'2021-11-15','S02'),
+('S07','飛毛腿','DELIVERY',15000,'2024-02-28','S01'),
+('S08','阿麗','WAITER',13500,'2025-08-01','S02');
+INSERT INTO ITEM VALUES
+('D01','港式奶茶','Milk Tea','DRINK',22,50),
+('D02','凍檸茶','Iced Lemon Tea','DRINK',24,40),
+('D03','鴛鴦','Yuen Yeung','DRINK',23,30),
+('D04','好立克','Horlicks','DRINK',25,10),
+('B01','菠蘿包','Pineapple Bun','BREAD',12,20),
+('B02','菠蘿油','Pineapple Bun with Butter','BREAD',16,15),
+('B03','雞尾包','Cocktail Bun','BREAD',11,12),
+('B04','西多士','French Toast','BREAD',32,8),
+('N01','餐蛋麵','Spam and Egg Noodles','NOODLE',38,25),
+('N02','沙嗲牛肉麵','Satay Beef Noodles','NOODLE',42,20),
+('R01','焗豬扒飯','Baked Pork Chop Rice','RICE',68,15),
+('R02','揚州炒飯','Yeung Chow Fried Rice','RICE',58,18);
+INSERT INTO CUSTOMER VALUES
+('C01','陳大文','91234567','Mong Kok','Y'),
+('C02','李小美','92345678','Sham Shui Po','N'),
+('C03','張伯','93456789','Mong Kok','Y'),
+('C04','黃太','94567890','Tsuen Wan','N'),
+('C05','何仔',NULL,'Sha Tin','N'),
+('C06','林小姐','96789012','Mong Kok','N'),
+('C07','Mr Food','97890123','Central','Y'),
+('C08','吳先生',NULL,'Sham Shui Po','N');
+INSERT INTO ORDERS VALUES
+('O01','C01','S05','2025-11-03','DINE'),
+('O02','C03','S06','2025-11-03','DINE'),
+('O03','C05','S02','2025-11-15','TAKE'),
+('O04','C02','S07','2025-12-01','DELI'),
+('O05','C07','S05','2025-12-20','DINE'),
+('O06','C01','S06','2026-01-08','DINE'),
+('O07','C04','S07','2026-02-14','DELI'),
+('O08','C03','S05','2026-03-03','DINE'),
+('O09','C05','S02','2026-04-01','TAKE'),
+('O10','C01','S07','2026-05-20','DELI'),
+('O11','C02','S02','2026-06-06','TAKE'),
+('O12','C06','S08','2026-08-18','DINE'),
+('O13','C02','S07','2026-09-09','DELI'),
+('O14','C03','S08','2026-10-01','DINE'),
+('O15','C01','S06','2026-10-10','DINE');
+INSERT INTO ODETAIL VALUES
+('O01','D01',2),('O01','B01',2),
+('O02','D03',1),('O02','R01',1),
+('O03','B01',3),
+('O04','N02',1),('O04','D02',1),
+('O05','B04',1),('O05','D01',1),('O05','R01',1),('O05','N01',1),
+('O06','D01',1),('O06','B02',1),
+('O07','R02',3),('O07','D02',2),
+('O08','N01',1),('O08','D03',1),
+('O09','B01',4),('O09','B02',2),
+('O10','R01',1),('O10','D01',1),
+('O11','D02',1),
+('O12','N02',2),
+('O13','R02',1),('O13','B01',1),
+('O14','D01',1),('O14','B02',1),
+('O15','R01',2),('O15','D03',1);
+CREATE TABLE TWMENU (IID CHAR(3) PRIMARY KEY, ENAME VARCHAR(40) NOT NULL, PRICE INTEGER NOT NULL);
+INSERT INTO TWMENU VALUES
+('D01','Milk Tea',24),
+('D02','Iced Lemon Tea',26),
+('B01','Pineapple Bun',13),
+('N01','Spam and Egg Noodles',40),
+('T01','Fish Ball Noodles',36),
+('T02','Curry Fish Balls',15);

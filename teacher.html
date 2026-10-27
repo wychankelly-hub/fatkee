@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>發記冰室：老師頁</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+  #app { max-width: 1100px; }
+  .teacher table.res td, .teacher table.res th { text-align: center; }
+  .teacher table.res td.left { text-align: left; white-space: normal; min-width: 180px; font-family: var(--font); font-size: 13px; }
+  textarea.field { min-height: 160px; font-family: var(--mono); text-transform: uppercase; }
+  .low { color: var(--red); font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="app" class="teacher">
+  <header class="topbar"><span class="ib"></span><h1>發記冰室 · 老師頁</h1><span class="ib"></span></header>
+  <div class="mosaic"></div>
+  <div class="stack">
+    <p class="muted" style="margin:0">把學生的進度碼貼在下面，每行一個。所有分析都在這部電腦內進行，不會上載任何資料。</p>
+    <textarea class="field" id="codes" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" spellcheck="false" autocorrect="off" autocapitalize="characters"></textarea>
+    <div class="row"><button class="btn" id="go">分析</button><button class="btn alt" id="csv" disabled>複製為 CSV</button></div>
+    <div id="out"></div>
+  </div>
+</div>
+<script type="module" src="js/teacher.js"></script>
+</body>
+</html>
