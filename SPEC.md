@@ -27,7 +27,7 @@ A self-paced SQL revision game for weak HKDSE ICT Form 6 students (Elective 2A D
 1. **Students only ever type English, digits and symbols.** All conditions use codes or English values (`'S05'`, `'DRINK'`, `'Mong Kok'`). Chinese appears only in the UI and in query **output**. Never add a level whose answer needs Chinese typing.
 2. **All UI text is Traditional Chinese, simple written Chinese (書面語), no Cantonese colloquial** (no 唔、咗、嘅、晒). Use HKDSE terms (數據庫、資料表、欄位、記錄、子查詢、主鍵). Show the English term in brackets the first time a key term appears. Only SQL itself is English.
 3. **No drag-and-drop anywhere.** Use tap-to-select only.
-4. **No login, no backend, no data collection.** Static site, hosted on GitHub Pages.
+4. **Students do not log in.** The game stays on GitHub Pages. Optional anonymous aggregate analytics uses a separate collector, with developer-only authenticated reads. No student IDs, SQL answers, progress codes or persistent player identifiers are collected. See analytics/README.md.
 5. **Stay inside the DSE 2A syllabus:** at most 3 tables per query, one level of subquery, no `LIMIT`/`TOP`, no window functions, no CTEs. Do not add levels outside this.
 6. Never put a school name anywhere in the game.
 
@@ -210,3 +210,4 @@ Show TWMENU only from world 8 on, so it does not confuse students earlier.
 - Do not show `LIMIT` or other non-syllabus SQL in hints, explanations or the concept cards.
 - Do not edit `levels.json` by hand; change `content/*.py` and rerun `python3 build.py`.
 - Do not show dataset B or mention it by name to students.
+

@@ -34,7 +34,7 @@ jobs:
       - name: Collect site files
         run: |
           mkdir -p _site/data
-          cp -r index.html teacher.html manifest.json sw.js levels.json css js vendor icons _site/
+          cp -r index.html teacher.html developer.html manifest.json sw.js levels.json css js vendor icons _site/
           cp data/data_a.sql data/patch_b.sql _site/data/
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
@@ -50,3 +50,4 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+

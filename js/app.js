@@ -1,3 +1,4 @@
+import { usage, statisticsEnabled, setStatisticsEnabled } from './analytics.js';
 // 發記冰室數據大危機：主程式（畫面、關卡、進度）
 import { Checker, preprocess } from './checker.js';
 import { encode, decode } from './progress.js';
@@ -102,6 +103,7 @@ function Home() {
       <button class="btn alt" data-go="#/settings">⚙️ 設定</button>
     </div>
     <p class="center muted">已得 ${got} / ${total} 粒星</p>
+    <p class="center muted" style="font-size:13px">遊戲可提供匿名整體使用統計，不傳送學號或答案。可在<a href="#/settings">設定</a>關閉。</p>
     ${!standalone && !S.a2hs ? `
     <div class="card tip">
       <b>把遊戲加到主畫面，進度會更安全</b>
@@ -305,6 +307,7 @@ function Level(id, opt = {}) {
   if (!l) return go('#/map');
   if (!opt.warmup && !unlocked(l)) { toast('請先完成上一關'); return go(`#/world/${l.world}`); }
   if (!opt.warmup) { S.lastLevel = l.id; save(); }
+  usage.event('start', l.id);
   const st = { hints: 0, wrong: 0, shown: false, done: false };
   const best = S.stars[l.id] || 0;
   app.innerHTML = `<div class="level">
@@ -339,6 +342,8 @@ function Level(id, opt = {}) {
 // 過關：記錄星數、錯題簿，顯示回饋卡
 function finish(ctx, stars, { result = null, caps = [], extraHTML = '' } = {}) {
   const { l, st, opt } = ctx;
+  if (st.done) return;
+  usage.event('complete', l.id);
   st.done = true;
   if (!opt.warmup) {
     S.passed[l.id] = true;
@@ -455,7 +460,7 @@ function WriteLevel(ctx) {
       finish(ctx, stars, { caps: v.caps });
       return;
     }
-    st.wrong++;
+    st.wrong++; usage.event('wrong', l.id);
     const lintBox = v.kind === 'error' && v.lint.length ? v.lint.map(m => `<div class="dse"><b>DSE 扣分位</b><br>${esc(m)}</div>`).join('') : '';
     const sh = failSheet(`<div class="fb-title bad">✘ ${v.kind === 'error' ? '執行時出錯' : '還未正確'}</div>
       ${lintBox}
@@ -475,7 +480,7 @@ function WriteLevel(ctx) {
     sh.querySelector('[data-act="ok"]').onclick = () => { closeSheet(); showHint(); };
   }
   function showHint() {
-    st.hints++;
+    st.hints++; usage.event('hint', l.id);
     const hb = $('#hints');
     if (st.hints < 3) {
       const h = l.hints[st.hints - 1];
@@ -589,7 +594,7 @@ function OrderLevel(ctx) {
       finish(ctx, st.wrong ? 1 : 3, { result, extraHTML: `<pre class="code">${esc(seq.join(' '))}</pre>` });
       return;
     }
-    st.wrong++;
+    st.wrong++; usage.event('wrong', l.id);
     const extra = seq.find(t => l.extra.includes(t));
     const k = seq.findIndex((t, j) => t !== l.blocks[j]);
     failSheet(`<div class="fb-title bad">✘ 次序不對</div>
@@ -617,7 +622,7 @@ function ChoiceLevel(ctx) {
     const i = +b.dataset.i;
     if (i !== l.answer) {
       if (b.classList.contains('wrong')) return;
-      st.wrong++;
+      st.wrong++; usage.event('wrong', l.id);
       b.classList.add('wrong', 'shake');
       toast('不對，再想一想。');
       return;
@@ -642,7 +647,7 @@ function BugLevel(ctx) {
     const i = +b.dataset.i;
     if (i !== l.wrong) {
       if (b.classList.contains('wrong')) return;
-      st.wrong++; b.classList.add('wrong', 'shake'); toast('這部分沒有問題，再找找。');
+      st.wrong++; usage.event('wrong', l.id); b.classList.add('wrong', 'shake'); toast('這部分沒有問題，再找找。');
       return;
     }
     b.classList.add('right');
@@ -773,10 +778,12 @@ function Settings() {
     <div class="stack">
       <div class="card"><label class="switch"><input type="checkbox" id="chips" ${S.chips ? 'checked' : ''}>
         <span>所有世界都顯示關鍵字按鈕<br><small class="muted">世界 1 至 3 一定會顯示。考試要自己默寫關鍵字，建議由世界 4 開始自己輸入。</small></span></label></div>
+      <div class="card"><label class="switch"><input type="checkbox" id="statistics" ${statisticsEnabled() ? 'checked' : ''}><span>允許匿名使用統計<br><small class="muted">啟用統計服務後，只傳送訪問、可見頁面活動時間及關卡活動次數，不傳送學號、答案或進度碼。不使用玩家識別碼；可隨時關閉。網絡服務供應商仍會處理連線資料。瀏覽器的隱私設定優先。</small></span></label></div>
       <button class="btn alt" data-act="tip">重新顯示「加到主畫面」提示</button>
       <button class="btn red" data-act="reset">清除所有進度</button>
       <p class="muted center" style="font-size:13px">數據庫：SQLite ${esc(CK.version())}</p>
     </div>`;
+  $('#statistics').onchange = e => { setStatisticsEnabled(e.target.checked); Settings(); };
   $('#chips').onchange = e => { S.chips = e.target.checked; save(); };
   $('[data-act="tip"]').onclick = () => { S.a2hs = false; save(); toast('已在首頁顯示'); };
   $('[data-act="reset"]').onclick = () => {
@@ -819,6 +826,7 @@ async function boot() {
     console.log('SQLite version', ver);
     const [maj, min] = ver.split('.').map(Number);
     if (maj === 3 && min < 39) console.warn('SQLite 版本低於 3.39，RIGHT / FULL JOIN 不能使用');
+    usage.start();
     window.__game = { G, CK, S };
     if (!location.hash) location.replace('#/home');
     route();
@@ -833,3 +841,4 @@ boot();
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }
+
