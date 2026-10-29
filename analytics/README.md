@@ -1,5 +1,7 @@
 # Anonymous usage statistics
 
+For a managed hosting option without maintaining a server, follow [the Cloudflare Workers + D1 guide](cloudflare/README.md) (Traditional Chinese). This Node.js server is the alternative for an existing host. Deploy only one collector.
+
 The game remains on GitHub Pages. `developer.html` displays aggregate visits, visible-page activity minutes, level starts, completions, wrong attempts and hints for 7/30/90 days. The read API requires an owner-held bearer key. Hiding the page is not the access control.
 
 ## Deploy
