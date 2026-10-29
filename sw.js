@@ -1,9 +1,9 @@
 // Service worker：快取遊戲檔案，第一次開啟後可以離線使用。
 // 更新遊戲內容後，請把 VERSION 加一。
-const VERSION = 'fatkee-v1';
+const VERSION = 'fatkee-v2';
 const FILES = [
   './', './index.html', './css/style.css',
-  './js/app.js', './js/checker.js', './js/progress.js', './js/content-ui.js',
+  './js/analytics.js', './js/analytics-config.js', './js/app.js', './js/checker.js', './js/progress.js', './js/content-ui.js',
   './levels.json', './data/data_a.sql', './data/patch_b.sql',
   './vendor/sql-wasm.js', './vendor/sql-wasm.wasm',
   './manifest.json', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png',
@@ -32,3 +32,4 @@ self.addEventListener('fetch', e => {
     return hit || net;
   }));
 });
+
