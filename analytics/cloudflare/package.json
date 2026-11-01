@@ -1,0 +1,11 @@
+{
+  "name": "fatkee-anonymous-collector",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler d1 migrations apply DB --remote && wrangler deploy",
+    "check": "wrangler deploy --dry-run"
+  },
+  "devDependencies": { "wrangler": "^4.0.0" }
+}

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>發記冰室 · 使用統計</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+#app{max-width:1100px} .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.metrics strong{display:block;font-size:28px}.field{min-height:44px}select{font:inherit;min-height:44px}
+</style>
+</head>
+<body><main id="app" class="stack">
+<h1>開發者使用統計</h1>
+<p class="muted">匿名整體統計 · 日期以 UTC 計算 · 保留最近 90 日</p>
+<form id="login" class="card stack">
+<label for="token">開發者密鑰</label>
+<input class="field" id="token" type="password" autocomplete="off" required>
+<label for="days">統計期間</label>
+<select id="days"><option value="7">最近 7 日</option><option value="30">最近 30 日</option><option value="90">最近 90 日</option></select>
+<div class="row"><button class="btn" id="refresh">載入統計</button><button class="btn alt" id="logout" type="button">清除密鑰</button></div>
+</form>
+<p id="status" role="status" aria-live="polite"></p>
+<section id="results" hidden>
+<div class="metrics" id="metrics"></div>
+<p class="muted">訪問次數以每次載入遊戲計算，不代表獨立玩家。活動時間只計算可見頁面；完成比例為過關次數 ÷ 開始次數，包括重玩及溫故題，並非學生通過率。停用統計、離線、連線失敗及攔截器會令數字偏低。</p>
+<h2>每日活動</h2><div class="tbl-wrap"><table class="res"><thead><tr><th>日期</th><th>訪問</th><th>活動分鐘</th><th>過關</th></tr></thead><tbody id="daily"></tbody></table></div>
+<h2>關卡活動</h2><div class="tbl-wrap"><table class="res"><thead><tr><th>關卡</th><th>開始</th><th>過關</th><th>完成比例</th><th>錯誤嘗試</th><th>提示</th></tr></thead><tbody id="levels"></tbody></table></div>
+</section>
+</main><script type="module" src="js/developer.js"></script></body></html>
