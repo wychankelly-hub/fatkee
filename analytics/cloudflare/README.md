@@ -68,3 +68,22 @@ https://wychankelly-hub.github.io/fatkee/developer.html
 - 本地測試：在專案根目錄執行 npm test。Workers 測試使用 SQLite 模擬 D1 API；真實 Cloudflare 部署仍需帳戶完成後驗證。
 
 原本的 Node.js 自架版本仍可使用，見 ../README.md。兩個版本擇一，不需要同時部署。
+
+
+## 使用 Cloudflare 網頁連接 GitHub
+
+也可以不安裝本地工具，直接在 Workers & Pages 建立應用並連接此 GitHub repo：
+
+| 欄位 | 值 |
+|---|---|
+| Project name | `fatkee-usage` |
+| Production branch | `feature/anonymous-usage-dashboard` |
+| Advanced settings → Path | `analytics/cloudflare`（相對路徑，沒有開頭的斜線） |
+| Build command | `npm ci` |
+| Deploy command | `npx wrangler deploy` |
+
+如果建立畫面沒有 Branch 欄位，建立應用後到 Settings → Build 設定 Production branch。不要假設重試舊建置一定會改用新分支；查看新建置的 branch 和 commit，或在目標分支提交更新，觸發新建置。
+
+`root directory not found` 發生在執行程式之前。先確認建置使用的提交包含 `analytics/cloudflare/package.json`，再核對 Path。此功能合併前，`main` 分支並沒有這個資料夾。
+
+網頁部署前，請在 D1 Console 執行 `migrations/0001_totals.sql`，並把資料庫 ID 填入 `wrangler.jsonc`。Worker 部署後，到 Settings → Variables & Secrets 新增 Secret `ADMIN_TOKEN`；不要把它加入 Build variables 或 GitHub 檔案。未設定密鑰時 API 回傳 503 是預期行為。最後按原指南把公開 Worker 網址接上遊戲。
