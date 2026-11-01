@@ -31,6 +31,20 @@ export default {
     const reply = (status, value) => new Response(value === undefined ? null : JSON.stringify(value), {
       status, headers: value === undefined ? headers : { ...headers, 'Content-Type': 'application/json' },
     });
+    const url = new URL(request.url);
+    // Public readiness only: never return secrets, lengths, headers or usage data.
+    if (url.pathname === '/health' && request.method === 'GET') {
+      if (!env.SITE_ORIGIN) return reply(503, { version: 'health-v1', ready: false, reason: 'SITE_ORIGIN_MISSING' });
+      if (typeof env.ADMIN_TOKEN !== 'string' || !env.ADMIN_TOKEN) return reply(503, { version: 'health-v1', ready: false, reason: 'ADMIN_TOKEN_MISSING' });
+      if (env.ADMIN_TOKEN.length < 32) return reply(503, { version: 'health-v1', ready: false, reason: 'ADMIN_TOKEN_TOO_SHORT' });
+      if (!env.DB) return reply(503, { version: 'health-v1', ready: false, reason: 'DB_BINDING_MISSING' });
+      try {
+        await env.DB.prepare('SELECT day,event,level,count FROM totals LIMIT 0').all();
+        return reply(200, { version: 'health-v1', ready: true });
+      } catch {
+        return reply(503, { version: 'health-v1', ready: false, reason: 'DATABASE_QUERY_FAILED' });
+      }
+    }
     if (!env.SITE_ORIGIN) return reply(503);
     if (request.headers.get('Origin') !== env.SITE_ORIGIN) return reply(403);
     Object.assign(headers, {
@@ -42,7 +56,6 @@ export default {
     // Preflight is anonymous. Keep CORS headers on configuration errors so the
     // dashboard can report HTTP 503 instead of an opaque "Failed to fetch".
     if (!env.ADMIN_TOKEN || env.ADMIN_TOKEN.length < 32 || !env.DB) return reply(503);
-    const url = new URL(request.url);
     if (url.pathname === '/stats' && request.method === 'GET') {
       if (!await authorized(request.headers.get('Authorization'), env.ADMIN_TOKEN)) return reply(401);
       const days = Number(url.searchParams.get('days') || 7);

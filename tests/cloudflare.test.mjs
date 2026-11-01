@@ -14,6 +14,19 @@ test('Workers API enforces private reads, aggregate-only schema and bounded inpu
     async all() { return { results: db.prepare(sql).all(...args) }; },
   });
   const env = { DB: { prepare: sql => adapter(sql) }, ADMIN_TOKEN: 'a'.repeat(64), SITE_ORIGIN: 'https://wychankelly-hub.github.io' };
+  const health = settings => worker.fetch(new Request('https://collector.example/health'), settings);
+  assert.deepEqual(await (await health(env)).json(), { version: 'health-v1', ready: true });
+  for (const [settings, reason] of [
+    [{ ...env, SITE_ORIGIN: '' }, 'SITE_ORIGIN_MISSING'],
+    [{ ...env, ADMIN_TOKEN: '' }, 'ADMIN_TOKEN_MISSING'],
+    [{ ...env, ADMIN_TOKEN: 'short' }, 'ADMIN_TOKEN_TOO_SHORT'],
+    [{ ...env, DB: undefined }, 'DB_BINDING_MISSING'],
+    [{ ...env, DB: { prepare() { throw Error('sensitive error'); } } }, 'DATABASE_QUERY_FAILED'],
+  ]) {
+    const response = await health(settings);
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { version: 'health-v1', ready: false, reason });
+  }
   const request = (path, init = {}) => new Request('https://collector.example' + path, {
     ...init, headers: { Origin: env.SITE_ORIGIN, ...init.headers },
   });
