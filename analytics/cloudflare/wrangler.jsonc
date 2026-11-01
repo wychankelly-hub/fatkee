@@ -10,7 +10,7 @@
   "d1_databases": [{
     "binding": "DB",
     "database_name": "fatkee-usage",
-    "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+    "database_id": "55c3c150-a3d4-45c5-ba74-90b863c95702",
     "migrations_dir": "migrations"
   }],
   "triggers": { "crons": ["5 0 * * *"] },
