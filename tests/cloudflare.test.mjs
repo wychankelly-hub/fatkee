@@ -24,6 +24,27 @@ test('Workers API enforces private reads, aggregate-only schema and bounded inpu
   assert.equal((await worker.fetch(request('/stats', { headers: { Origin: 'https://other.example' } }), env)).status, 403);
   assert.equal((await worker.fetch(request('/events', { method: 'OPTIONS' }), env)).status, 204);
   assert.equal((await worker.fetch(request('/stats'), { ...env, ADMIN_TOKEN: '' })).status, 503);
+  for (const settings of [
+    { ...env, ADMIN_TOKEN: '' },
+    { ...env, ADMIN_TOKEN: 'short' },
+    { ...env, DB: undefined },
+  ]) {
+    const preflight = await worker.fetch(request('/stats', {
+      method: 'OPTIONS', headers: {
+        'Access-Control-Request-Method': 'GET',
+        'Access-Control-Request-Headers': 'authorization',
+      },
+    }), settings);
+    assert.equal(preflight.status, 204);
+    assert.equal(preflight.headers.get('Access-Control-Allow-Origin'), env.SITE_ORIGIN);
+    assert.match(preflight.headers.get('Access-Control-Allow-Headers'), /Authorization/);
+    const unavailable = await worker.fetch(request('/stats'), settings);
+    assert.equal(unavailable.status, 503);
+    assert.equal(unavailable.headers.get('Access-Control-Allow-Origin'), env.SITE_ORIGIN);
+    assert.equal((await worker.fetch(request('/stats', {
+      method: 'OPTIONS', headers: { Origin: 'https://other.example' },
+    }), settings)).status, 403);
+  }
   for (const event of ['visit', 'visit', 'active', 'start', 'complete', 'wrong', 'hint']) {
     assert.equal((await post({ event, level: ['visit','active'].includes(event) ? '' : '1-1', seconds: event === 'active' ? 15 : 0 })).status, 204);
   }

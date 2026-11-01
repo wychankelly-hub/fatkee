@@ -31,7 +31,7 @@ export default {
     const reply = (status, value) => new Response(value === undefined ? null : JSON.stringify(value), {
       status, headers: value === undefined ? headers : { ...headers, 'Content-Type': 'application/json' },
     });
-    if (!env.ADMIN_TOKEN || env.ADMIN_TOKEN.length < 32 || !env.DB || !env.SITE_ORIGIN) return reply(503);
+    if (!env.SITE_ORIGIN) return reply(503);
     if (request.headers.get('Origin') !== env.SITE_ORIGIN) return reply(403);
     Object.assign(headers, {
       'Access-Control-Allow-Origin': env.SITE_ORIGIN,
@@ -39,6 +39,9 @@ export default {
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     });
     if (request.method === 'OPTIONS') return reply(204);
+    // Preflight is anonymous. Keep CORS headers on configuration errors so the
+    // dashboard can report HTTP 503 instead of an opaque "Failed to fetch".
+    if (!env.ADMIN_TOKEN || env.ADMIN_TOKEN.length < 32 || !env.DB) return reply(503);
     const url = new URL(request.url);
     if (url.pathname === '/stats' && request.method === 'GET') {
       if (!await authorized(request.headers.get('Authorization'), env.ADMIN_TOKEN)) return reply(401);

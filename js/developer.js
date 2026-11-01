@@ -26,6 +26,8 @@ $('#login').onsubmit = async e => {
       credentials: 'omit', referrerPolicy: 'no-referrer', cache: 'no-store', signal: controller.signal,
     });
     if (response.status === 401) throw new Error('密鑰不正確。');
+    if (response.status === 403) throw new Error('此網站來源未獲允許，請檢查 Worker 的 SITE_ORIGIN 設定。');
+    if (response.status === 503) throw new Error('統計服務尚未就緒。請確認 Worker 已部署至少 32 字元的 ADMIN_TOKEN Secret、DB 綁定及 totals 資料表。');
     if (!response.ok) throw new Error('統計服務暫時無法使用。');
     const { rows } = await response.json();
     const days = {}, levels = {}, totals = {};
@@ -48,7 +50,11 @@ $('#login').onsubmit = async e => {
     }
     results.hidden = false; status.textContent = rows.length ? '已更新統計。' : '此期間尚未收到統計資料。';
   } catch (error) {
-    if (pending === controller) status.textContent = error.name === 'AbortError' ? '連線已取消或逾時，請重試。' : error.message;
+    if (pending === controller) status.textContent = error.name === 'AbortError'
+      ? '連線已取消或逾時，請重試。'
+      : error instanceof TypeError
+        ? '無法連接統計服務。請在瀏覽器 Network 檢查 stats 或 OPTIONS 請求的狀態碼；可能是 CORS、Cloudflare 存取限制或網絡攔截。請勿分享 Authorization 或密鑰。'
+        : error.message;
   } finally { clearTimeout(timeout); if (pending === controller) $('#refresh').disabled = false; }
 };
 if (!ANALYTICS_URL) status.textContent = '統計服務尚未設定。';
