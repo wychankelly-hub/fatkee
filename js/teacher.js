@@ -1,8 +1,10 @@
 // 老師頁：分析多個進度碼
 import { decode } from './progress.js';
+import { initTeacherCloud } from './teacher-cloud.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const G = await fetch('levels.json').then(r => r.json());
+initTeacherCloud(G);
 const worlds = G.worlds.map(w => ({ ...w, idx: G.levels.map((l, i) => l.world === w.id ? i : -1).filter(i => i >= 0) }));
 let csv = '';
 

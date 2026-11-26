@@ -4,14 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
 <title>發記冰室：老師頁</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
-  #app { max-width: 1100px; }
+  #app { max-width: 1200px; }
   .teacher table.res td, .teacher table.res th { text-align: center; }
-  .teacher table.res td.left { text-align: left; white-space: normal; min-width: 180px; font-family: var(--font); font-size: 13px; }
-  textarea.field { min-height: 160px; font-family: var(--mono); text-transform: uppercase; }
+  .teacher table.res td.left { text-align: left; white-space: normal; min-width: 160px; font-family: var(--font); font-size: 13px; }
+  .teacher table.res tbody tr.pick { cursor: pointer; }
+  .teacher table.res tbody tr.pick:hover td { background: var(--green-soft); }
+  textarea.field { min-height: 140px; font-family: var(--mono); text-transform: uppercase; }
   .low { color: var(--red); font-weight: 700; }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .tools .field { flex: 1 1 220px; width: auto; }
+  .tools select { font: inherit; min-height: 48px; border-radius: 12px; border: 2px solid var(--line); background: var(--card); color: var(--ink); padding: 0 10px; }
+  .tools .btn { flex: 0 0 auto; width: auto; }
+  .who { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+  .lv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+  .lv-cell { border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; background: var(--card); font-size: 13px; }
+  .lv-cell b { font-family: var(--mono); }
+  .lv-cell.todo { opacity: .55; }
+  .lv-cell.rev { border: 2px solid var(--red); }
+  h2.sec { margin-top: 26px; }
 </style>
 </head>
 <body>
@@ -19,7 +33,10 @@
   <header class="topbar"><span class="ib"></span><h1>發記冰室 · 老師頁</h1><span class="ib"></span></header>
   <div class="mosaic"></div>
   <div class="stack">
-    <p class="muted" style="margin:0">把學生的進度碼貼在下面，每行一個。所有分析都在這部電腦內進行，不會上載任何資料。</p>
+    <section id="cloud" class="stack"></section>
+
+    <h2 class="sec">沒有登入的學生：貼上進度碼</h2>
+    <p class="muted" style="margin:0">把學生的進度碼貼在下面，每行一個。這部分只在這部電腦內分析，不會上載任何資料。</p>
     <textarea class="field" id="codes" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX-XXXX" spellcheck="false" autocorrect="off" autocapitalize="characters"></textarea>
     <div class="row"><button class="btn" id="go">分析</button><button class="btn alt" id="csv" disabled>複製為 CSV</button></div>
     <div id="out"></div>

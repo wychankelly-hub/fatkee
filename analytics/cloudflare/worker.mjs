@@ -1,4 +1,5 @@
 import game from '../../levels.json' with { type: 'json' };
+import { handleAccounts, ACCOUNT_PATHS } from './accounts.mjs';
 
 const levels = new Set(game.levels.map(level => level.id));
 let minute = 0, requests = 0;
@@ -45,14 +46,17 @@ export default {
         return reply(503, { version: 'health-v1', ready: false, reason: 'DATABASE_QUERY_FAILED' });
       }
     }
+    if (url.pathname === '/health/accounts' && request.method === 'GET') return handleAccounts(request, env, url, reply, { levels });
     if (!env.SITE_ORIGIN) return reply(503);
     if (request.headers.get('Origin') !== env.SITE_ORIGIN) return reply(403);
     Object.assign(headers, {
       'Access-Control-Allow-Origin': env.SITE_ORIGIN,
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     });
     if (request.method === 'OPTIONS') return reply(204);
+    // Google 登入及學生進度（與匿名統計分開，見 accounts.mjs）
+    if (ACCOUNT_PATHS.test(url.pathname)) return handleAccounts(request, env, url, reply, { levels });
     // Preflight is anonymous. Keep CORS headers on configuration errors so the
     // dashboard can report HTTP 503 instead of an opaque "Failed to fetch".
     if (!env.ADMIN_TOKEN || env.ADMIN_TOKEN.length < 32 || !env.DB) return reply(503);
