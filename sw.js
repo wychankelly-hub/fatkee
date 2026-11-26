@@ -1,6 +1,6 @@
 // Service worker：快取遊戲檔案，第一次開啟後可以離線使用。
 // 更新遊戲內容後，請把 VERSION 加一。
-const VERSION = 'fatkee-v5';
+const VERSION = 'fatkee-v6';
 const FILES = [
   './', './index.html', './css/style.css',
   './js/analytics.js', './js/analytics-config.js', './js/account.js', './js/account-config.js', './js/app.js', './js/checker.js', './js/progress.js', './js/content-ui.js',
