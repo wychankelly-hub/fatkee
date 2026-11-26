@@ -5,7 +5,8 @@
   "compatibility_date": "2026-10-29",
   "workers_dev": true,
   "vars": {
-    "SITE_ORIGIN": "https://wychankelly-hub.github.io"
+    "SITE_ORIGIN": "https://wychankelly-hub.github.io",
+    "GOOGLE_CLIENT_ID": ""
   },
   "d1_databases": [{
     "binding": "DB",

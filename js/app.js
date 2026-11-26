@@ -1,4 +1,5 @@
 import { usage, statisticsEnabled, setStatisticsEnabled } from './analytics.js';
+import { account, renderGoogleButton } from './account.js';
 // 發記冰室數據大危機：主程式（畫面、關卡、進度）
 import { Checker, preprocess } from './checker.js';
 import { encode, decode } from './progress.js';
@@ -103,6 +104,7 @@ function Home() {
       <button class="btn alt" data-go="#/settings">⚙️ 設定</button>
     </div>
     <p class="center muted">已得 ${got} / ${total} 粒星</p>
+    ${accountCard()}
     <p class="center muted" style="font-size:13px">遊戲可提供匿名整體使用統計，不傳送學號或答案。可在<a href="#/settings">設定</a>關閉。</p>
     ${!standalone && !S.a2hs ? `
     <div class="card tip">
@@ -118,6 +120,7 @@ function Home() {
     go(target ? `#/level/${target.id}` : '#/map');
   });
   app.querySelector('[data-act="a2hs"]')?.addEventListener('click', () => { S.a2hs = true; save(); Home(); });
+  bindAccountCard();
 }
 function nextUnpassedAfter(l) {
   const i = G.levels.indexOf(l);
@@ -351,6 +354,7 @@ function finish(ctx, stars, { result = null, caps = [], extraHTML = '' } = {}) {
     if (st.shown || st.wrong >= 3) S.review[l.id] = true;
     else if (st.hints === 0 && st.wrong <= 1) delete S.review[l.id];
     save();
+    account.record(l.id, 'pass', { stars, review: !!S.review[l.id] });
   }
   const next = opt.warmup ? null : nextInWorld(l);
   const worldEnd = !opt.warmup && !next;
@@ -460,7 +464,7 @@ function WriteLevel(ctx) {
       finish(ctx, stars, { caps: v.caps });
       return;
     }
-    st.wrong++; usage.event('wrong', l.id);
+    st.wrong++; usage.event('wrong', l.id); rec(ctx, 'wrong');
     const lintBox = v.kind === 'error' && v.lint.length ? v.lint.map(m => `<div class="dse"><b>DSE 扣分位</b><br>${esc(m)}</div>`).join('') : '';
     const sh = failSheet(`<div class="fb-title bad">✘ ${v.kind === 'error' ? '執行時出錯' : '還未正確'}</div>
       ${lintBox}
@@ -480,7 +484,7 @@ function WriteLevel(ctx) {
     sh.querySelector('[data-act="ok"]').onclick = () => { closeSheet(); showHint(); };
   }
   function showHint() {
-    st.hints++; usage.event('hint', l.id);
+    st.hints++; usage.event('hint', l.id); rec(ctx, 'hint');
     const hb = $('#hints');
     if (st.hints < 3) {
       const h = l.hints[st.hints - 1];
@@ -594,7 +598,7 @@ function OrderLevel(ctx) {
       finish(ctx, st.wrong ? 1 : 3, { result, extraHTML: `<pre class="code">${esc(seq.join(' '))}</pre>` });
       return;
     }
-    st.wrong++; usage.event('wrong', l.id);
+    st.wrong++; usage.event('wrong', l.id); rec(ctx, 'wrong');
     const extra = seq.find(t => l.extra.includes(t));
     const k = seq.findIndex((t, j) => t !== l.blocks[j]);
     failSheet(`<div class="fb-title bad">✘ 次序不對</div>
@@ -622,7 +626,7 @@ function ChoiceLevel(ctx) {
     const i = +b.dataset.i;
     if (i !== l.answer) {
       if (b.classList.contains('wrong')) return;
-      st.wrong++; usage.event('wrong', l.id);
+      st.wrong++; usage.event('wrong', l.id); rec(ctx, 'wrong');
       b.classList.add('wrong', 'shake');
       toast('不對，再想一想。');
       return;
@@ -647,7 +651,7 @@ function BugLevel(ctx) {
     const i = +b.dataset.i;
     if (i !== l.wrong) {
       if (b.classList.contains('wrong')) return;
-      st.wrong++; usage.event('wrong', l.id); b.classList.add('wrong', 'shake'); toast('這部分沒有問題，再找找。');
+      st.wrong++; usage.event('wrong', l.id); rec(ctx, 'wrong'); b.classList.add('wrong', 'shake'); toast('這部分沒有問題，再找找。');
       return;
     }
     b.classList.add('right');
@@ -745,6 +749,7 @@ function CodePage() {
     const v = $('#cls').value.replace(/\D/g, '');
     if (v && +v > 65535) return toast('學號太長了');
     S.classNo = v; save(); toast('已儲存'); CodePage();
+    if (account.user) account.sync({}, v).catch(() => {});
   };
   $('[data-act="restore"]').onclick = () => {
     const d = decode($('#inp').value);
@@ -769,6 +774,79 @@ function applyCode(d) {
   }
   if (d.classNo) S.classNo = String(d.classNo);
   save();
+  if (account.user) account.sync(localLevels(), S.classNo).catch(() => {});
+}
+
+// ---------- Google 登入（可選） ----------
+const rec = (ctx, kind) => { if (!ctx.opt.warmup) account.record(ctx.l.id, kind); };
+const localLevels = () => Object.fromEntries(G.levels.filter(l => S.passed[l.id] || S.stars[l.id])
+  .map(l => [l.id, { stars: S.stars[l.id] || 0, passed: !!S.passed[l.id], review: !!S.review[l.id] }]));
+
+// 把雲端的進度合併到這部手機（星數取較高，過關及錯題簿取聯集）
+function mergeCloud(rows) {
+  for (const r of rows || []) {
+    if (!LV[r.level]) continue;
+    if (r.best_stars > (S.stars[r.level] || 0)) S.stars[r.level] = r.best_stars;
+    if (r.passed) { S.passed[r.level] = true; S.stars[r.level] = S.stars[r.level] || 0; }
+    if (r.in_review) S.review[r.level] = true;
+  }
+  save();
+}
+
+async function afterSignIn(r) {
+  mergeCloud(r.progress);
+  if (!S.classNo && r.user.classNo) { S.classNo = r.user.classNo; save(); }
+  try { await account.sync(localLevels(), S.classNo || undefined); } catch { /* 下次再同步 */ }
+}
+
+async function refreshFromCloud() {
+  try {
+    const r = await account.me();
+    mergeCloud(r.progress);
+    await account.sync(localLevels(), S.classNo || undefined);
+    await account.flush();
+  } catch (e) {
+    if (e.status === 401) toast('登入已過期，請重新用 Google 登入。', 3000);
+  }
+}
+
+function accountCard(detail = false) {
+  if (!account.enabled) return '';
+  const u = account.user;
+  if (u) return `<div class="card stack" id="acct">
+      <div><b>☁️ 已登入：${esc(u.name || u.email)}</b><br><small class="muted">${esc(u.email)}</small></div>
+      <small class="muted">你的星數、錯題簿、錯誤及提示次數會儲存到雲端，老師可以查看。不會儲存你寫的 SQL。${account.pending ? `（有 ${account.pending} 項記錄等待上載）` : ''}</small>
+      ${detail ? `<div class="row"><button class="btn alt small" data-act="signout">登出</button><button class="btn ghost small" data-act="delcloud">刪除雲端記錄</button></div>` : ''}
+    </div>`;
+  return `<div class="card stack" id="acct">
+      <b>${detail ? 'Google 帳戶（可選）' : '用 Google 登入（可選）'}</b>
+      <small class="muted">登入後，你的星數和錯題簿會儲存到雲端：換手機也不會遺失，老師也可以看到你的進度。會儲存你的 Google 名稱及電郵，不會儲存你寫的 SQL。不登入也可以玩。</small>
+      <div id="gbtn" style="min-height:44px"></div>
+    </div>`;
+}
+
+function bindAccountCard() {
+  const el = $('#gbtn');
+  if (el) renderGoogleButton(el, async credential => {
+    try {
+      const r = await account.signIn(credential);
+      await afterSignIn(r);
+      toast(`已登入：${r.user.name || r.user.email}`);
+    } catch (e) { toast('登入失敗，請稍後再試。', 3000); }
+    route();
+  });
+  $('#acct [data-act="signout"]')?.addEventListener('click', () => {
+    account.signOut(); toast('已登出。這部手機上的進度會保留。'); route();
+  });
+  $('#acct [data-act="delcloud"]')?.addEventListener('click', () => {
+    const sh = openSheet(`<div class="sh-head"><h3>刪除雲端記錄？</h3></div>
+      <div class="sh-body"><p>雲端上你的所有記錄（星數、錯題簿、錯誤及提示次數、名稱及電郵）都會刪除，老師將看不到。這部手機上的進度會保留。</p></div>
+      <div class="sh-foot row"><button class="btn ghost" data-act="close">取消</button><button class="btn red" data-act="ok">刪除</button></div>`);
+    sh.querySelector('[data-act="ok"]').onclick = async () => {
+      try { await account.deleteMe(); closeSheet(); toast('已刪除雲端記錄並登出'); route(); }
+      catch { toast('刪除失敗，請檢查網絡。', 3000); }
+    };
+  });
 }
 
 // ---------- 設定 ----------
@@ -776,6 +854,7 @@ function Settings() {
   app.onclick = null;
   app.innerHTML = `${topbar('設定')}
     <div class="stack">
+      ${accountCard(true)}
       <div class="card"><label class="switch"><input type="checkbox" id="chips" ${S.chips ? 'checked' : ''}>
         <span>所有世界都顯示關鍵字按鈕<br><small class="muted">世界 1 至 3 一定會顯示。考試要自己默寫關鍵字，建議由世界 4 開始自己輸入。</small></span></label></div>
       <div class="card"><label class="switch"><input type="checkbox" id="statistics" ${statisticsEnabled() ? 'checked' : ''}><span>允許匿名使用統計<br><small class="muted">啟用統計服務後，只傳送訪問、可見頁面活動時間及關卡活動次數，不傳送學號、答案或進度碼。不使用玩家識別碼；可隨時關閉。網絡服務供應商仍會處理連線資料。瀏覽器的隱私設定優先。</small></span></label></div>
@@ -784,11 +863,12 @@ function Settings() {
       <p class="muted center" style="font-size:13px">數據庫：SQLite ${esc(CK.version())}</p>
     </div>`;
   $('#statistics').onchange = e => { setStatisticsEnabled(e.target.checked); Settings(); };
+  bindAccountCard();
   $('#chips').onchange = e => { S.chips = e.target.checked; save(); };
   $('[data-act="tip"]').onclick = () => { S.a2hs = false; save(); toast('已在首頁顯示'); };
   $('[data-act="reset"]').onclick = () => {
     const sh = openSheet(`<div class="sh-head"><h3>清除所有進度？</h3></div>
-      <div class="sh-body"><p>所有星數及錯題簿都會刪除，不能復原。建議先到「進度碼」抄下你的進度碼。</p></div>
+      <div class="sh-body"><p>這部手機上的所有星數及錯題簿都會刪除，不能復原。建議先到「進度碼」抄下你的進度碼。${account.user ? '已儲存到雲端的記錄不會刪除；下次登入時會重新下載。' : ''}</p></div>
       <div class="sh-foot row"><button class="btn ghost" data-act="close">取消</button><button class="btn red" data-act="ok">清除</button></div>`);
     sh.querySelector('[data-act="ok"]').onclick = () => {
       Object.assign(S, { stars: {}, passed: {}, review: {}, seenPrologue: false, lastLevel: null });
@@ -830,6 +910,7 @@ async function boot() {
     window.__game = { G, CK, S };
     if (!location.hash) location.replace('#/home');
     route();
+    if (account.user) refreshFromCloud();
   } catch (e) {
     console.error(e);
     app.innerHTML = `<div class="loading"><p>載入失敗</p><p class="muted" style="font-size:15px;font-weight:400">請檢查網絡，然後重新載入。<br><small>${esc(e.message)}</small></p>
